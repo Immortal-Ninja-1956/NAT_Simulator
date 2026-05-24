@@ -79,6 +79,10 @@ Multiple devices share one public IP using different ports.
 
 1. Download or clone the repository
 2. Open `index.html` in a browser
-
 Or run using VS Code Live Server.
 ---
+## Contributors
+
+- [Jyotirmaya Bhanja](https://github.com/Immortal-Ninja-1956)
+- [Swayamsiddha Mohapatra](https://github.com/Kepler989)
+
