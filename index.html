@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAT Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            position: relative;
+        }
+
+        .header-buttons {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-btn {
+            padding: 8px 16px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .header-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .section h3 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .ip-type-badge {
+            position: absolute;
+            right: 10px;
+            top: 38px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .ip-private {
+            background: #51cf66;
+            color: white;
+        }
+
+        .ip-public {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .ip-invalid {
+            background: #ffd43b;
+            color: #333;
+        }
+
+        .input-error {
+            border-color: #ff6b6b !important;
+        }
+
+        .input-warning {
+            border-color: #ffd43b !important;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #333;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            font-family: 'Courier New', monospace;
+        }
+
+        tr:hover {
+            background: #f0f0f0;
+        }
+
+        .log {
+            max-height: 250px;
+            overflow-y: auto;
+            background: #2d2d2d;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        .log-out {
+            color: #ff6b6b;
+        }
+
+        .log-in {
+            color: #51cf66;
+        }
+
+        .log-warning {
+            color: #ffd43b;
+        }
+
+        .log-step {
+            color: #74c0fc;
+            padding-left: 20px;
+        }
+
+        .empty-table {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .nat-type-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-dynamic {
+            background: #51cf66;
+            color: white;
+        }
+
+        .badge-static {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .badge-pat {
+            background: #74c0fc;
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            position: relative;
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .modal h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .modal p, .modal ul {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .modal ul {
+            padding-left: 25px;
+        }
+
+        .modal li {
+            margin-bottom: 8px;
+        }
+
+        .team-member {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .team-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            margin-right: 20px;
+        }
+
+        .team-info h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .team-info p {
+            color: #666;
+            margin: 0;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .video-container {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #000;
+            cursor: pointer;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-thumbnail {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s;
+        }
+
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: rgba(102, 126, 234, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 1;
+        }
+
+        .play-button:hover {
+            background: rgba(102, 126, 234, 1);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .play-button::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 25px solid white;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            margin-left: 5px;
+        }
+
+        .video-title {
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .video-title::before {
+            content: '🎥';
+            margin-right: 8px;
+            font-size: 20px;
+        }
+
+        .video-input-group {
+            margin-bottom: 15px;
+        }
+
+        .video-input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .video-input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .video-input-group button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-buttons">
+            <button class="header-btn" onclick="openLearnModal()">Learn</button>
+            <button class="header-btn" onclick="openDevelopedByModal()">Developed by</button>
+            <button class="header-btn" onclick="openHelpModal()">Help</button>
+            <button class="header-btn" onclick="downloadReport()">Download</button>
+        </div>
+
+        <h1>NAT Simulator</h1>
+        <p class="subtitle">Network Address Translation: Dynamic, Static, and PAT modes</p>
+
+        <div class="section">
+            <h3>NAT Configuration</h3>
+            <div class="input-row">
+                <div>
+                    <label>NAT Type:</label>
+                    <select id="natType" onchange="onNATTypeChange()">
+                        <option value="dynamic">Dynamic NAT</option>
+                        <option value="static">Static NAT</option>
+                        <option value="pat">PAT (Port Address Translation)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Public IP:</label>
+                    <input type="text" id="publicIP" value="203.0.113.5">
+                </div>
+                <div>
+                    <label>Starting Port (PAT only):</label>
+                    <input type="text" id="startPort" value="50000">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">Total Packets Sent</div>
+                    <div class="stat-value" id="totalPackets">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Active Translations</div>
+                    <div class="stat-value" id="activeTranslations">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Unique Destinations</div>
+                    <div class="stat-value" id="uniqueDests">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Send Packet (Outbound)</h3>
+            <div class="input-row">
+                <div class="input-wrapper">
+                    <label>Source IP:</label>
+                    <input type="text" id="srcIP" value="192.168.1.10" oninput="validateSourceIP()">
+                    <span id="srcIPBadge" class="ip-type-badge ip-private">PRIVATE</span>
+                </div>
+                <div>
+                    <label>Source Port:</label>
+                    <input type="text" id="srcPort" value="45678">
+                </div>
+                <div class="input-wrapper">
+                    <label>Destination IP:</label>
+                    <input type="text" id="dstIP" value="8.8.8.8" oninput="validateDestinationIP()">
+                    <span id="dstIPBadge" class="ip-type-badge ip-public">PUBLIC</span>
+                </div>
+            </div>
+            <div class="input-row">
+                <div>
+                    <label>Destination Port:</label>
+                    <input type="text" id="dstPort" value="80">
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button onclick="sendOutbound()">Send Outbound</button>
+                    <button class="btn-secondary" onclick="clearNAT()">Clear NAT Table</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>NAT Translation Table</h3>
+            <table id="natTable">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Private IP</th>
+                        <th>Private Port</th>
+                        <th>Public IP</th>
+                        <th>Public Port</th>
+                        <th>Destination</th>
+                        <th>Timeout</th>
+                    </tr>
+                </thead>
+                <tbody id="natTableBody">
+                    <tr><td colspan="7" class="empty-table">No active translations</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h3>Destination IPs</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Destination IP</th>
+                        <th>Packets Sent</th>
+                    </tr>
+                </thead>
+                <tbody id="destTable">
+                    <tr><td colspan="2" class="empty-table">No destinations yet</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h3>Packet Translation Log</h3>
+            <div class="log" id="packetLog">
+                <div class="log-entry">NAT Router Ready...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="learnModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('learnModal')">&times;</span>
+
+
+            <h3>What is Network Address Translation (NAT)?</h3>
+            <p>Network Address Translation (NAT) is a networking technique used to map private IP addresses within a local network to one or more public IP addresses, enabling communication between private devices and the internet. It helps conserve the limited pool of IPv4 addresses by allowing multiple devices to share a single public IP. NAT also provides an additional layer of security by hiding internal IP addresses from external networks, making it harder for attackers to identify devices on a private network. It works mainly on routers, which replace the private source IP address with a public one and keep a translation table to track connections. Although NAT simplifies network management and improves security, it can sometimes disrupt applications that require direct end-to-end communication, such as certain VPNs or peer-to-peer services.</p>
+            
+            <h3>Types of NAT</h3>
+            <ul>
+                <li><strong>Dynamic NAT:</strong> Maps private IP addresses to public IP addresses from a pool. Each private address gets a unique public address during the session.</li>
+                <li><strong>Static NAT:</strong> Creates a permanent one-to-one mapping between a private IP address and a public IP address.</li>
+                <li><strong>PAT (Port Address Translation):</strong> Also known as NAT overload, maps multiple private IP addresses to a single public IP address using different port numbers.</li>
+            </ul>
+
+            <h3>How NAT Works</h3>
+            <p>When a device on a private network sends a packet to the internet:</p>
+            <ul>
+                <li>The NAT router receives the packet with a private source IP</li>
+                <li>It translates the private IP to a public IP (and port if using PAT)</li>
+                <li>The router stores this mapping in a NAT translation table</li>
+                <li>When a response returns, the router uses the table to translate back to the private IP</li>
+            </ul>
+            <h2>📚 Learn About NAT</h2>
+
+<div class="video-container">
+    <div class="video-title">Video Tutorial: Understanding NAT</div>
+    
+    <div class="video-wrapper" id="videoWrapper">
+        <iframe 
+            src="https://www.youtube.com/embed/FTUV0t6JaDA" 
+            title="Video Tutorial: Understanding NAT" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            allowfullscreen
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+        ></iframe>
+    </div>
+</div>
+            <h3>References</h3>
+            <ul>
+                <li>Computer Networks - Tanenbaum & Wetherall (5th Edition)</li>
+                <li>RFC 3022 - Traditional IP Network Address Translator</li>
+                <li>Data Communications and Networking - Forouzan</li>
+                <li>Network+ Certification Guide - Cisco Press</li>
+            </ul>
+
+            <h3>How This Project Was Built</h3>
+            <p>This NAT Simulator was developed using:</p>
+            <ul>
+                <li><strong>HTML5:</strong> For the structure and layout of the simulator</li>
+                <li><strong>CSS3:</strong> For styling, animations, and responsive design with gradient backgrounds</li>
+                <li><strong>JavaScript:</strong> For NAT logic implementation, packet translation algorithms, and real-time updates</li>
+                <li><strong>DOM Manipulation:</strong> For dynamic table updates and log entries</li>
+                <li><strong>Data Structures:</strong> Arrays and objects to maintain NAT translation tables</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="developedByModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('developedByModal')">&times;</span>
+            <h2>👥 Developed By</h2>
+            
+            <div class="team-member">
+    <img src="swa.png"
+        alt="Swayamsiddha Mohapatra" 
+        style="
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 20px;"
+    >
+
+    <div class="team-info">
+        <h4>
+            <a 
+                href="https://github.com/Kepler989" 
+                target="_blank"
+                style="text-decoration: none; color: #333;"
+            >
+                Swayamsiddha Mohapatra
+            </a>
+        </h4>
+    </div>
+</div>
+
+<div class="team-member">
+    <img src="jyo.jpg" 
+        alt="Jyotirmaya Bhanja" 
+        style="
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 20px;"
+    >
+
+    <div class="team-info">
+        <h4>
+            <a 
+                href="https://github.com/Immortal-Ninja-1956" 
+                target="_blank"
+                style="text-decoration: none; color: #333;"
+            >
+                Jyotirmaya Bhanja
+            </a>
+        </h4>
+    </div>
+</div>
+            
+
+            <p style="text-align: center; margin-top: 30px; color: #667eea; font-weight: 600;">
+                Computer Networks Project - 2025
+            </p>
+        </div>
+    </div>
+
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('helpModal')">&times;</span>
+            <h2>❓ Help - How to Use NAT Simulator</h2>
+            
+            <h3>Getting Started</h3>
+            <p>This simulator helps you understand how Network Address Translation works by visualizing the packet translation process in real-time.</p>
+
+            <h3>Step-by-Step Guide</h3>
+            
+            <h4>1. Configure NAT Settings</h4>
+            <ul>
+                <li>Select <strong>NAT Type</strong>: Choose between Dynamic NAT, Static NAT, or PAT</li>
+                <li>Set <strong>Public IP</strong>: The public IP address your router will use (default: 203.0.113.5)</li>
+                <li>Set <strong>Starting Port</strong>: For PAT mode, specify the starting port number (default: 50000)</li>
+            </ul>
+
+            <h4>2. Input Packet Information</h4>
+            <ul>
+                <li><strong>Source IP:</strong> Enter a network IP (e.g., 192.168.1.10) - the simulator will automatically detect if it's private or public</li>
+                <li><strong>Source Port:</strong> Enter the source port number (1-65535)</li>
+                <li><strong>Destination IP:</strong> Enter the destination IP address - the simulator will detect if it's private or public</li>
+                <li><strong>Destination Port:</strong> Enter the destination port (e.g., 80 for HTTP, 443 for HTTPS)</li>
+            </ul>
+
+            <h4>3. IP Type Detection</h4>
+            <p>The simulator automatically detects whether IPs are:</p>
+            <ul>
+                <li><span style="color: #51cf66; font-weight: bold;">PRIVATE:</span> Valid private IP address (192.168.x.x, 10.x.x.x, 172.16-31.x.x)</li>
+                <li><span style="color: #ff6b6b; font-weight: bold;">PUBLIC:</span> Public IP address (internet-routable)</li>
+                <li><span style="color: #ffd43b; font-weight: bold;">INVALID:</span> Incorrectly formatted IP address</li>
+            </ul>
+
+            <h4>4. Send Packets</h4>
+            <p>Click the <strong>"Send Outbound"</strong> button to simulate sending a packet. The simulator will:</p>
+            <ul>
+                <li>Show the outbound translation process step-by-step in the log</li>
+                <li>Add an entry to the NAT Translation Table</li>
+                <li>Automatically simulate an inbound response after 1.5 seconds</li>
+                <li>Update statistics showing total packets, active translations, and destinations</li>
+            </ul>
+
+            <h4>5. Understanding the Results</h4>
+            <p><strong>NAT Translation Table:</strong> Shows active mappings with type, private/public addresses, and timeout</p>
+            <p><strong>Destination IPs Table:</strong> Tracks all destination IPs and packet counts</p>
+            <p><strong>Packet Translation Log:</strong> Detailed step-by-step process with color coding:</p>
+            <ul>
+                <li><span style="color: #ff6b6b;">Red text:</span> Outbound packet processing</li>
+                <li><span style="color: #51cf66;">Green text:</span> Inbound packet processing</li>
+                <li><span style="color: #ffd43b;">Yellow text:</span> Warnings and errors</li>
+                <li><span style="color: #74c0fc;">Blue text:</span> Step details</li>
+            </ul>
+
+            <h4>6. Interpreting NAT Types</h4>
+            <ul>
+                <li><strong>Dynamic NAT:</strong> Uses the same port number, different mapping per source</li>
+                <li><strong>Static NAT:</strong> Fixed one-to-one mapping (appears in table)</li>
+                <li><strong>PAT:</strong> Multiple sources share one public IP with different ports</li>
+            </ul>
+
+            <h4>7. Advanced Features</h4>
+            <ul>
+                <li><strong>Port Collision Detection:</strong> In PAT mode, automatically handles port conflicts</li>
+                <li><strong>Timeout Management:</strong> Translations expire after 60 seconds of inactivity</li>
+                <li><strong>Clear NAT Table:</strong> Reset all translations and statistics</li>
+            </ul>
+
+            <h3>Example Workflow</h3>
+            <ol>
+                <li>Select PAT mode</li>
+                <li>Enter source: 192.168.1.10:45678</li>
+                <li>Enter destination: 8.8.8.8:80</li>
+                <li>Click "Send Outbound"</li>
+                <li>Watch the log for step-by-step translation</li>
+                <li>Observe the NAT table entry created</li>
+                <li>See the automatic inbound response simulation</li>
+            </ol>
+
+            <h3>Tips</h3>
+            <ul>
+                <li>Try different NAT types to see how they behave differently</li>
+                <li>Send multiple packets from different sources to see PAT in action</li>
+                <li>Watch the timeout counter decrease in the NAT table</li>
+                <li>Use the Download button to save your session results</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script>
+        class NATEntry {
+            constructor(privateIP, privatePort, publicIP, publicPort, destIP, destPort, natType) {
+                this.privateIP = privateIP;
+                this.privatePort = privatePort;
+                this.publicIP = publicIP;
+                this.publicPort = publicPort;
+                this.destIP = destIP;
+                this.destPort = destPort;
+                this.natType = natType;
+                this.timestamp = Date.now();
+                this.timeout = 60;
+            }
+        }
+
+        let natTable = [];
+        let nextAvailablePort = 50000;
+        let totalPackets = 0;
+        let destinationStats = {};
+        let detailedLogs = [];
+        let videoLoaded = false;
+
+        function loadYouTubeVideo() {
+            const videoId = document.getElementById('youtubeVideoId').value.trim();
+            if (!videoId) {
+                alert('Please enter a YouTube Video ID');
+                return;
+            }
+
+            const thumbnail = document.getElementById('videoThumbnail');
+            const playButton = document.getElementById('playButton');
+            
+            thumbnail.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            playButton.style.display = 'flex';
+            videoLoaded = true;
+            
+            playButton.onclick = function() {
+                playVideo(videoId);
+            };
+        }
+
+        function playVideo(videoId) {
+            if (!videoLoaded) {
+                const vid = document.getElementById('youtubeVideoId').value.trim();
+                if (!vid) {
+                    alert('Please enter a YouTube Video ID first');
+                    return;
+                }
+                videoId = vid;
+            }
+            
+            const videoWrapper = document.getElementById('videoWrapper');
+            videoWrapper.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+        }
+
+        function isPrivateIP(ip) {
+            const parts = ip.split('.').map(Number);
+            if (parts.length !== 4) return false;
+            
+            if (parts[0] === 10) return true;
+            if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+            if (parts[0] === 192 && parts[1] === 168) return true;
+            if (parts[0] === 127) return true; 
+            
+            return false;
+        }
+
+        function validateSourceIP() {
+            const srcIPInput = document.getElementById('srcIP');
+            const srcIPBadge = document.getElementById('srcIPBadge');
+            const ip = srcIPInput.value.trim();
+            
+            if (!isValidIP(ip)) {
+                srcIPBadge.textContent = 'INVALID';
+                srcIPBadge.className = 'ip-type-badge ip-invalid';
+                srcIPInput.className = 'input-error';
+                return;
+            }
+            
+            if (isPrivateIP(ip)) {
+                srcIPBadge.textContent = 'PRIVATE';
+                srcIPBadge.className = 'ip-type-badge ip-private';
+                srcIPInput.className = '';
+            } else {
+                srcIPBadge.textContent = 'PUBLIC';
+                srcIPBadge.className = 'ip-type-badge ip-public';
+                srcIPInput.className = 'input-warning';
+            }
+        }
+
+        function validateDestinationIP() {
+            const dstIPInput = document.getElementById('dstIP');
+            const dstIPBadge = document.getElementById('dstIPBadge');
+            const ip = dstIPInput.value.trim();
+            
+            if (!isValidIP(ip)) {
+                dstIPBadge.textContent = 'INVALID';
+                dstIPBadge.className = 'ip-type-badge ip-invalid';
+                dstIPInput.className = 'input-error';
+                return;
+            }
+            
+            if (isPrivateIP(ip)) {
+                dstIPBadge.textContent = 'PRIVATE';
+                dstIPBadge.className = 'ip-type-badge ip-private';
+                dstIPInput.className = 'input-warning';
+            } else {
+                dstIPBadge.textContent = 'PUBLIC';
+                dstIPBadge.className = 'ip-type-badge ip-public';
+                dstIPInput.className = '';
+            }
+        }
+
+        function openLearnModal() {
+            document.getElementById('learnModal').style.display = 'block';
+        }
+
+        function openDevelopedByModal() {
+            document.getElementById('developedByModal').style.display = 'block';
+        }
+
+        function openHelpModal() {
+            document.getElementById('helpModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        function findNATEntry(privateIP, privatePort, destIP, destPort) {
+            for (let i = 0; i < natTable.length; i++) {
+                if (natTable[i].privateIP === privateIP && 
+                    natTable[i].privatePort === parseInt(privatePort) &&
+                    natTable[i].destIP === destIP &&
+                    natTable[i].destPort === parseInt(destPort)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function findByPublicPort(publicPort) {
+            for (let i = 0; i < natTable.length; i++) {
+                if (natTable[i].publicPort === parseInt(publicPort)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function checkPortCollision(publicPort) {
+            return findByPublicPort(publicPort) !== -1;
+        }
+
+        function allocatePort() {
+            let attempts = 0;
+            let port = nextAvailablePort;
+            
+            while (checkPortCollision(port) && attempts < 100) {
+                port = nextAvailablePort++;
+                attempts++;
+                logPacket(`⚠ PORT COLLISION DETECTED: Port ${port-1} already in use, trying ${port}`, true, 'warning');
+            }
+            
+            if (attempts >= 100) {
+                logPacket('⚠ ERROR: Could not allocate port after 100 attempts', true, 'warning');
+                return -1;
+            }
+            
+            nextAvailablePort++;
+            return port;
+        }
+
+        function addNATEntry(privateIP, privatePort, publicIP, publicPort, destIP, destPort, natType) {
+            const entry = new NATEntry(privateIP, parseInt(privatePort), publicIP, publicPort, destIP, parseInt(destPort), natType);
+            natTable.push(entry);
+            return natTable.length - 1;
+        }
+
+        function isValidIP(ip) {
+            const parts = ip.split('.');
+            if (parts.length !== 4) return false;
+            for (let i = 0; i < parts.length; i++) {
+                const num = parseInt(parts[i]);
+                if (isNaN(num) || num < 0 || num > 255) return false;
+            }
+            return true;
+        }
+
+        function isValidPort(port) {
+            const p = parseInt(port);
+            return !isNaN(p) && p >= 1 && p <= 65535;
+        }
+
+        function logPacket(message, isOutbound, type = 'normal') {
+            const log = document.getElementById('packetLog');
+            const entry = document.createElement('div');
+            
+            let className = 'log-entry ';
+            if (type === 'step') {
+                className += 'log-step';
+            } else if (type === 'warning') {
+                className += 'log-warning';
+            } else {
+                className += isOutbound ? 'log-out' : 'log-in';
+            }
+            
+            entry.className = className;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+
+            detailedLogs.push({
+                timestamp: new Date().toISOString(),
+                message: message,
+                type: type,
+                isOutbound: isOutbound
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalPackets').textContent = totalPackets;
+            document.getElementById('activeTranslations').textContent = natTable.length;
+            document.getElementById('uniqueDests').textContent = Object.keys(destinationStats).length;
+        }
+
+        function updateDestTable() {
+            const tbody = document.getElementById('destTable');
+            tbody.innerHTML = '';
+
+            const destinations = Object.entries(destinationStats);
+            if (destinations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" class="empty-table">No destinations yet</td></tr>';
+                return;
+            }
+
+            destinations.sort((a, b) => b[1] - a[1]);
+            
+            for (const [ip, count] of destinations) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ip}</td>
+                    <td>${count}</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        function updateNATTable() {
+            const tbody = document.getElementById('natTableBody');
+            tbody.innerHTML = '';
+
+            if (natTable.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-table">No active translations</td></tr>';
+                return;
+            }
+
+            for (let i = 0; i < natTable.length; i++) {
+                const entry = natTable[i];
+                const elapsed = Math.floor((Date.now() - entry.timestamp) / 1000);
+                const remaining = Math.max(0, entry.timeout - elapsed);
+                
+                let badgeClass = 'badge-dynamic';
+                if (entry.natType === 'static') badgeClass = 'badge-static';
+                if (entry.natType === 'pat') badgeClass = 'badge-pat';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="nat-type-badge ${badgeClass}">${entry.natType.toUpperCase()}</span></td>
+                    <td>${entry.privateIP}</td>
+                    <td>${entry.privatePort}</td>
+                    <td>${entry.publicIP}</td>
+                    <td>${entry.publicPort}</td>
+                    <td>${entry.destIP}:${entry.destPort}</td>
+                    <td>${remaining}s</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        function onNATTypeChange() {
+            const natType = document.getElementById('natType').value;
+            logPacket(`NAT TYPE CHANGED TO: ${natType.toUpperCase()}`, true);
+        }
+
+        function sendOutbound() {
+            const srcIP = document.getElementById('srcIP').value.trim();
+            const srcPort = document.getElementById('srcPort').value.trim();
+            const dstIP = document.getElementById('dstIP').value.trim();
+            const dstPort = document.getElementById('dstPort').value.trim();
+            const publicIP = document.getElementById('publicIP').value.trim();
+            const natType = document.getElementById('natType').value;
+
+            if (!isValidIP(srcIP) || !isValidIP(dstIP) || !isValidIP(publicIP)) {
+                alert('Invalid IP address format');
+                return;
+            }
+
+            if (!isValidPort(srcPort) || !isValidPort(dstPort)) {
+                alert('Invalid port number (1-65535)');
+                return;
+            }
+
+            if (!isPrivateIP(srcIP)) {
+                logPacket(`⚠ WARNING: Source IP ${srcIP} is PUBLIC - NAT typically uses PRIVATE source IPs`, true, 'warning');
+                const confirmSrc = window.confirm(`Warning: The source IP ${srcIP} appears to be a PUBLIC IP address.\n\nNAT is typically used to translate PRIVATE IP addresses (like 192.168.x.x, 10.x.x.x, 172.16-31.x.x) to public addresses.\n\nDo you want to continue anyway?`);
+                if (!confirmSrc) return;
+            } else {
+                logPacket(`✓ Source IP ${srcIP} verified as PRIVATE - suitable for NAT translation`, true, 'step');
+            }
+
+            if (isPrivateIP(dstIP)) {
+                logPacket(`⚠ WARNING: Destination IP ${dstIP} is PRIVATE - typically destinations should be PUBLIC`, true, 'warning');
+                const confirmDst = window.confirm(`Warning: The destination IP ${dstIP} appears to be a PRIVATE IP address.\n\nNAT destinations are typically PUBLIC IP addresses on the internet.\n\nDo you want to continue anyway?`);
+                if (!confirmDst) return;
+            } else {
+                logPacket(`✓ Destination IP ${dstIP} verified as PUBLIC - typical internet destination`, true, 'step');
+            }
+
+            totalPackets++;
+            
+            if (!destinationStats[dstIP]) {
+                destinationStats[dstIP] = 0;
+            }
+            destinationStats[dstIP]++;
+
+            logPacket(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, true);
+            logPacket(`PACKET #${totalPackets} - OUTBOUND TRANSLATION STARTED`, true);
+            logPacket(`Step 1: Received packet from ${srcIP}:${srcPort}`, true, 'step');
+            logPacket(`Step 2: Destination is ${dstIP}:${dstPort}`, true, 'step');
+
+            let entryIndex = findNATEntry(srcIP, srcPort, dstIP, dstPort);
+            let publicPort;
+
+            if (entryIndex === -1) {
+                logPacket(`Step 3: No existing translation found`, true, 'step');
+                
+                if (natType === 'pat') {
+                    logPacket(`Step 4: Allocating public port using PAT...`, true, 'step');
+                    publicPort = allocatePort();
+                    if (publicPort === -1) {
+                        logPacket('ERROR: Failed to allocate port', true, 'warning');
+                        return;
+                    }
+                } else if (natType === 'dynamic') {
+                    logPacket(`Step 4: Using dynamic NAT (same port)`, true, 'step');
+                    publicPort = parseInt(srcPort);
+                } else {
+                    logPacket(`Step 4: Using static NAT mapping`, true, 'step');
+                    publicPort = parseInt(srcPort);
+                }
+                
+                logPacket(`Step 5: Creating new NAT entry`, true, 'step');
+                entryIndex = addNATEntry(srcIP, srcPort, publicIP, publicPort, dstIP, dstPort, natType);
+                logPacket(`Step 6: Translation mapped - ${srcIP}:${srcPort} <-> ${publicIP}:${publicPort}`, true, 'step');
+            } else {
+                publicPort = natTable[entryIndex].publicPort;
+                natTable[entryIndex].timestamp = Date.now();
+                logPacket(`Step 3: Found existing translation`, true, 'step');
+                logPacket(`Step 4: Using existing mapping - ${srcIP}:${srcPort} <-> ${publicIP}:${publicPort}`, true, 'step');
+            }
+
+            logPacket(`Step 7: Translating source address`, true, 'step');
+            logPacket(`        Before: ${srcIP}:${srcPort} -> ${dstIP}:${dstPort}`, true, 'step');
+            logPacket(`        After:  ${publicIP}:${publicPort} -> ${dstIP}:${dstPort}`, true, 'step');
+            logPacket(`Step 8: Forwarding packet to internet`, true, 'step');
+            logPacket(`✓ OUTBOUND COMPLETE: ${srcIP}:${srcPort} => ${publicIP}:${publicPort} -> ${dstIP}:${dstPort}`, true);
+
+            setTimeout(() => {
+                simulateInbound(dstIP, dstPort, publicIP, publicPort);
+            }, 1500);
+
+            updateNATTable();
+            updateStats();
+            updateDestTable();
+        }
+
+        function simulateInbound(srcIP, srcPort, dstIP, dstPort) {
+            logPacket(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, false);
+            logPacket(`INBOUND TRANSLATION STARTED`, false);
+            logPacket(`Step 1: Received response from ${srcIP}:${srcPort}`, false, 'step');
+            
+            const entryIndex = findByPublicPort(dstPort);
+
+            if (entryIndex === -1) {
+                logPacket(`Step 2: No translation found for port ${dstPort}`, false, 'step');
+                logPacket(`✗ INBOUND DROPPED: ${srcIP}:${srcPort} -> ${dstIP}:${dstPort} (No matching NAT entry)`, false, 'warning');
+                return;
+            }
+
+            const entry = natTable[entryIndex];
+            logPacket(`Step 2: Found matching NAT entry`, false, 'step');
+            logPacket(`Step 3: Reverse translation lookup successful`, false, 'step');
+            logPacket(`Step 4: Translating destination address`, false, 'step');
+            logPacket(`        Before: ${srcIP}:${srcPort} -> ${dstIP}:${dstPort}`, false, 'step');
+            logPacket(`        After:  ${srcIP}:${srcPort} -> ${entry.privateIP}:${entry.privatePort}`, false, 'step');
+            logPacket(`Step 5: Forwarding packet to private network`, false, 'step');
+            logPacket(`✓ INBOUND COMPLETE: ${srcIP}:${srcPort} => ${entry.privateIP}:${entry.privatePort}`, false);
+            
+            entry.timestamp = Date.now();
+            updateNATTable();
+        }
+
+        function clearNAT() {
+            natTable = [];
+            nextAvailablePort = parseInt(document.getElementById('startPort').value) || 50000;
+            totalPackets = 0;
+            destinationStats = {};
+            detailedLogs = [];
+            updateNATTable();
+            updateStats();
+            updateDestTable();
+            logPacket('━━━ NAT TABLE CLEARED ━━━', true);
+        }
+
+        function downloadReport() {
+            if (detailedLogs.length === 0) {
+                alert('No data to download. Please send some packets first.');
+                return;
+            }
+
+            const srcIP = document.getElementById('srcIP').value;
+            const srcPort = document.getElementById('srcPort').value;
+            const dstIP = document.getElementById('dstIP').value;
+            const dstPort = document.getElementById('dstPort').value;
+            const publicIP = document.getElementById('publicIP').value;
+            const natType = document.getElementById('natType').value;
+
+            let docContent = `NAT SIMULATOR - DETAILED REPORT\n`;
+            docContent += `Generated on: ${new Date().toLocaleString()}\n`;
+            docContent += `${'='.repeat(80)}\n\n`;
+
+            docContent += `CONFIGURATION AND INPUTS\n`;
+            docContent += `${'='.repeat(80)}\n`;
+            docContent += `NAT Type: ${natType.toUpperCase()}\n`;
+            docContent += `Public IP Address: ${publicIP}\n`;
+            docContent += `Starting Port (PAT): ${document.getElementById('startPort').value}\n\n`;
+
+            docContent += `CURRENT PACKET CONFIGURATION:\n`;
+            docContent += `  • Source IP: ${srcIP} [${isPrivateIP(srcIP) ? 'PRIVATE' : 'PUBLIC'}]\n`;
+            docContent += `  • Source Port: ${srcPort}\n`;
+            docContent += `  • Destination IP: ${dstIP} [${isPrivateIP(dstIP) ? 'PRIVATE' : 'PUBLIC'}]\n`;
+            docContent += `  • Destination Port: ${dstPort}\n`;
+            docContent += `\n`;
+
+            docContent += `SESSION STATISTICS\n`;
+            docContent += `${'='.repeat(80)}\n`;
+            docContent += `Total Packets Sent: ${totalPackets}\n`;
+            docContent += `Active Translations: ${natTable.length}\n`;
+            docContent += `Unique Destinations: ${Object.keys(destinationStats).length}\n`;
+            docContent += `\n`;
+
+            if (natTable.length > 0) {
+                docContent += `ACTIVE NAT TRANSLATION TABLE\n`;
+                docContent += `${'='.repeat(80)}\n`;
+                docContent += `Type       Private IP       Port   Public IP         Port   Destination          Timeout\n`;
+                docContent += `${'-'.repeat(80)}\n`;
+                
+                for (const entry of natTable) {
+                    const elapsed = Math.floor((Date.now() - entry.timestamp) / 1000);
+                    const remaining = Math.max(0, entry.timeout - elapsed);
+                    const typeStr = entry.natType.toUpperCase().padEnd(8);
+                    const privIP = entry.privateIP.padEnd(16);
+                    const privPort = String(entry.privatePort).padEnd(6);
+                    const pubIP = entry.publicIP.padEnd(16);
+                    const pubPort = String(entry.publicPort).padEnd(6);
+                    const dest = `${entry.destIP}:${entry.destPort}`.padEnd(20);
+                    
+                    docContent += `${typeStr} ${privIP} ${privPort} ${pubIP} ${pubPort} ${dest} ${remaining}s\n`;
+                }
+                docContent += `\n`;
+            }
+
+            if (Object.keys(destinationStats).length > 0) {
+                docContent += `DESTINATION IP STATISTICS\n`;
+                docContent += `${'='.repeat(80)}\n`;
+                docContent += `Destination IP        Packets Sent\n`;
+                docContent += `${'-'.repeat(80)}\n`;
+                
+                const destinations = Object.entries(destinationStats).sort((a, b) => b[1] - a[1]);
+                for (const [ip, count] of destinations) {
+                    docContent += `${ip.padEnd(20)} ${count}\n`;
+                }
+                docContent += `\n`;
+            }
+
+            docContent += `DETAILED PACKET TRANSLATION LOG\n`;
+            docContent += `${'='.repeat(80)}\n\n`;
+
+            for (const log of detailedLogs) {
+                const time = new Date(log.timestamp).toLocaleTimeString();
+                const prefix = log.type === 'step' ? '    ' : '';
+                docContent += `[${time}] ${prefix}${log.message}\n`;
+            }
+
+            docContent += `\n${'='.repeat(80)}\n`;
+            docContent += `EXPLANATION OF NAT PROCESS\n`;
+            docContent += `${'='.repeat(80)}\n\n`;
+
+            if (natType === 'dynamic') {
+                docContent += `DYNAMIC NAT PROCESS:\n`;
+                docContent += `1. Packet arrives from private network with source IP and port\n`;
+                docContent += `2. NAT router checks translation table for existing mapping\n`;
+                docContent += `3. If no mapping exists, creates new entry mapping private IP to public IP\n`;
+                docContent += `4. Source port typically remains the same in dynamic NAT\n`;
+                docContent += `5. Packet is forwarded with translated public source address\n`;
+                docContent += `6. Response packets are reverse-translated back to private address\n`;
+                docContent += `7. Mapping expires after timeout period of inactivity\n\n`;
+            } else if (natType === 'static') {
+                docContent += `STATIC NAT PROCESS:\n`;
+                docContent += `1. Permanent one-to-one mapping between private and public IP\n`;
+                docContent += `2. Mapping is pre-configured and does not change\n`;
+                docContent += `3. No dynamic port allocation needed\n`;
+                docContent += `4. Both inbound and outbound traffic use same mapping\n`;
+                docContent += `5. Commonly used for servers that need consistent public address\n\n`;
+            } else if (natType === 'pat') {
+                docContent += `PAT (PORT ADDRESS TRANSLATION) PROCESS:\n`;
+                docContent += `1. Multiple private IPs share single public IP address\n`;
+                docContent += `2. Each connection assigned unique public port number\n`;
+                docContent += `3. NAT router maintains table of port mappings\n`;
+                docContent += `4. Starting from configured port (${document.getElementById('startPort').value}), allocates next available port\n`;
+                docContent += `5. Handles port collisions by incrementing to next available port\n`;
+                docContent += `6. Allows thousands of devices to share one public IP\n`;
+                docContent += `7. Most common NAT type used in home/office routers\n`;
+                docContent += `8. Mappings expire after ${natTable.length > 0 ? natTable[0].timeout : 60} seconds of inactivity\n\n`;
+            }
+
+            docContent += `KEY CONCEPTS:\n`;
+            docContent += `• Private IP Range: Addresses used within local network (e.g., 192.168.x.x, 10.x.x.x, 172.16-31.x.x)\n`;
+            docContent += `• Public IP: Internet-routable address assigned by ISP\n`;
+            docContent += `• Translation Table: Database maintaining active address mappings\n`;
+            docContent += `• Timeout: Duration before inactive mappings are removed\n`;
+            docContent += `• Port Collision: When allocated port is already in use\n`;
+            docContent += `• IP Type Detection: Automatically identifies private vs public IP addresses for both source and destination\n\n`;
+
+            docContent += `${'='.repeat(80)}\n`;
+            docContent += `END OF REPORT\n`;
+            docContent += `${'='.repeat(80)}\n`;
+
+            const blob = new Blob([docContent], { type: 'application/msword' });
+            saveAs(blob, `NAT_Simulator_Report_${new Date().toISOString().slice(0,10)}.doc`);
+            
+            logPacket('✓ Report downloaded successfully', true);
+        }
+
+        setInterval(() => {
+            const now = Date.now();
+            const beforeCount = natTable.length;
+            natTable = natTable.filter(entry => {
+                const elapsed = (now - entry.timestamp) / 1000;
+                return elapsed < entry.timeout;
+            });
+            if (natTable.length !== beforeCount) {
+                updateNATTable();
+                updateStats();
+            }
+        }, 5000);
+
+        validateSourceIP();
+        validateDestinationIP();
+        updateNATTable();
+        updateStats();
+        updateDestTable();
+    </script>
+</body>
+</html>
